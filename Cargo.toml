@@ -1,0 +1,23 @@
+cargo-features = ["strip"]
+
+[package]
+name = "txrx"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "^1.0"
+bytes = "^1.1"
+base64 = "^0.13"
+getrandom = "^0.2"
+
+clap = { version = "3.0.0-beta.5", features = ["std", "derive"], default-features = false }
+ifaces = { git = "https://github.com/zkonge/rust-ifaces.git" }
+
+
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
