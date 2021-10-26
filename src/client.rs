@@ -12,7 +12,10 @@ use crate::{url::Url, App};
 fn get_available_stream(url: Url, args: &App) -> Option<TcpStream> {
     let mut rx_handshake_buffer = url.secret;
     for ip_to_try in dbg!(url.ips) {
-        match TcpStream::connect(SocketAddr::new(IpAddr::V4(ip_to_try), args.port)) {
+        match TcpStream::connect_timeout(
+            &SocketAddr::new(IpAddr::V4(ip_to_try), args.port),
+            Duration::from_secs(1),
+        ) {
             Ok(mut c) => {
                 match c.write_all(&rx_handshake_buffer) {
                     Ok(_) => (),
