@@ -5,6 +5,7 @@ use clap::Parser;
 mod client;
 mod server;
 mod url;
+#[cfg(not(target_os = "windows"))]
 mod utils;
 
 /// Simple program to greet a person

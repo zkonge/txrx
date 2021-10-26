@@ -49,7 +49,7 @@ pub fn client(args: App) {
     connection
         .read_exact(&mut metadata_buffer)
         .expect("Get filename size failed");
-    
+
     let filename_size = dbg!(metadata_buffer.get_u16() as usize);
 
     metadata_buffer.resize(filename_size, 0);

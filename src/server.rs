@@ -6,13 +6,18 @@ use std::{
 };
 
 use bytes::{BufMut, BytesMut};
-use ifaces::{ifaces, Kind};
+#[cfg(target_os = "windows")]
+use ifaces::{ifaces as get_all_addresses, Kind};
+#[cfg(not(target_os = "windows"))]
+use interfaces::Kind;
 
+#[cfg(not(target_os = "windows"))]
+use crate::utils::get_all_addresses;
 use crate::{url::Url, App};
 
 fn get_valid_ips() -> io::Result<Vec<Ipv4Addr>> {
     //TODO: IPv6? Coming soon...
-    let interfaces = ifaces()?
+    let interfaces = get_all_addresses()?
         .into_iter()
         .filter_map(|x| match (x.kind, x.addr) {
             (Kind::Ipv4, Some(SocketAddr::V4(x))) => Some(*x.ip()),

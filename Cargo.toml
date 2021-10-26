@@ -12,7 +12,12 @@ base64 = "^0.13"
 getrandom = "^0.2"
 
 clap = { version = "3.0.0-beta.5", features = ["std", "derive"], default-features = false }
+
+[target.'cfg(target_os = "windows")'.dependencies]
 ifaces = { git = "https://github.com/zkonge/rust-ifaces.git" }
+
+[target.'cfg(not(target_os = "windows"))'.dependencies]
+interfaces = "0.0.8"
 
 
 [profile.release]
