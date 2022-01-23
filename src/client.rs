@@ -2,6 +2,8 @@ use std::{
     fs::OpenOptions,
     io::{self, Read, Write},
     net::{IpAddr, SocketAddr, TcpStream},
+    sync::mpsc::channel,
+    thread::spawn,
     time::Duration,
 };
 
@@ -11,32 +13,28 @@ use crate::{url::Url, App};
 
 fn get_available_stream(url: Url, args: &App) -> Option<TcpStream> {
     let mut rx_handshake_buffer = url.secret;
-    for ip_to_try in dbg!(url.ips) {
-        match TcpStream::connect_timeout(
-            &SocketAddr::new(IpAddr::V4(ip_to_try), args.port),
-            Duration::from_secs(1),
-        ) {
-            Ok(mut c) => {
-                match c.write_all(&rx_handshake_buffer) {
-                    Ok(_) => (),
-                    Err(_) => continue,
-                };
-                c.set_read_timeout(Some(Duration::from_secs(1))).unwrap(); // It will fall?
-                match c.read_exact(&mut rx_handshake_buffer) {
-                    Ok(_) => {
-                        if &rx_handshake_buffer == b"txrx" {
-                            return Some(c);
-                        } else {
-                            continue;
-                        }
-                    }
-                    Err(_) => continue,
+
+    let (tx, rx) = channel::<TcpStream>();
+
+    dbg!(url.ips).iter().map(|x| IpAddr::V4(*x)).for_each(|ip| {
+        let tx = tx.clone();
+        let port = args.port;
+        spawn(move || {
+            if let Ok(mut c) = TcpStream::connect_timeout(&SocketAddr::new(ip, port), Duration::from_secs(1)) {
+                if c.write_all(&rx_handshake_buffer).is_err() {
+                    return;
                 }
-            }
-            Err(_) => continue,
-        };
-    }
-    None
+                c.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+                if c.read_exact(&mut rx_handshake_buffer).is_err() {
+                    return;
+                };
+                if &rx_handshake_buffer == b"txrx" {
+                    tx.send(c).unwrap();
+                }
+            };
+        });
+    });
+    rx.recv_timeout(Duration::from_secs(5)).ok()
 }
 
 pub fn client(args: App) {
